@@ -29,6 +29,7 @@ export interface Participant {
   id: string
   name: string
   staff_number?: string | null
+  person_id?: string | null
   cadre: string
   facility: string
   status: 'PRESENT' | 'ABSENT'
@@ -44,6 +45,45 @@ export interface SessionTrainer {
   phone: string
 }
 
+export interface Person {
+  id: string
+  national_id: string
+  first_name: string
+  middle_name?: string | null
+  last_name: string
+  gender: 'Male' | 'Female' | 'Other'
+  qualification: string
+  facility: string
+  county: string
+  phone?: string | null
+  email?: string | null
+  is_active: boolean
+}
+
+export interface Facility {
+  id: string
+  name: string
+  county: string
+  mfl_code?: string | null
+  facility_type?: string | null
+  is_active: boolean
+}
+
+export interface Sponsor {
+  id: string
+  name: string
+  code?: string | null
+  description?: string | null
+  is_active: boolean
+}
+
+export interface MoodleInfo {
+  enabled: boolean
+  url?: string | null
+  categories_path?: string | null
+  courses_path?: string | null
+}
+
 export interface SessionSummary {
   id: string
   title: string
@@ -52,6 +92,10 @@ export interface SessionSummary {
   program_name?: string | null
   county: string
   facility: string
+  venue?: string | null
+  funding_source?: string | null
+  sponsor_id?: string | null
+  sponsor_name?: string | null
   trainee_count: number
   start_date: string
   end_date: string
@@ -65,6 +109,7 @@ export interface SessionSummary {
   report_approved_by?: string | null
   report_approved_by_name?: string | null
   certificates_issued: boolean
+  certificates_signed: boolean
 }
 
 export interface TrainingSession extends SessionSummary {

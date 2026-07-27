@@ -1,12 +1,27 @@
 import { api } from './client'
 import type { PaginatedResponse, SessionSummary, TrainingSession } from '@/types'
 
-export async function listSessions(county?: string, skip = 0, limit = 50) {
+export interface ListSessionsParams {
+  county?: string
+  q?: string
+  approval_status?: string
+  status?: string
+  funding_source?: string
+  skip?: number
+  limit?: number
+}
+
+export async function listSessions(params: ListSessionsParams = {}) {
+  const { skip = 0, limit = 50, county, q, approval_status, status, funding_source } = params
   const { data } = await api.get<PaginatedResponse<SessionSummary>>('/sessions', {
     params: {
       skip,
       limit,
       ...(county ? { county } : {}),
+      ...(q ? { q } : {}),
+      ...(approval_status ? { approval_status } : {}),
+      ...(status ? { status } : {}),
+      ...(funding_source ? { funding_source } : {}),
     },
   })
   return data
@@ -22,6 +37,9 @@ export async function createSession(payload: {
   program_id?: string
   county: string
   facility: string
+  venue?: string
+  funding_source?: string
+  sponsor_id?: string
   start_date: string
   end_date: string
   status?: string
@@ -34,6 +52,9 @@ export async function updateSession(sessionId: string, payload: Partial<{
   title: string
   county: string
   facility: string
+  venue: string
+  funding_source: string
+  sponsor_id: string | null
   start_date: string
   end_date: string
   status: string
@@ -72,5 +93,10 @@ export async function approveReport(sessionId: string) {
 
 export async function rejectReport(sessionId: string, note: string) {
   const { data } = await api.patch<TrainingSession>(`/sessions/${sessionId}/report/reject`, { note })
+  return data
+}
+
+export async function completeSession(sessionId: string) {
+  const { data } = await api.patch<TrainingSession>(`/sessions/${sessionId}/complete`)
   return data
 }

@@ -10,7 +10,7 @@ import { AlertCircle, FileCheck, GraduationCap, Users, MapPin } from 'lucide-rea
 export function CountyOfficerDashboard({ user }: { user: AuthState }) {
   const { data, isLoading } = useQuery({
     queryKey: ['sessions', 'county', user.county],
-    queryFn: () => listSessions(user.county, 0, 50),
+    queryFn: () => listSessions({ county: user.county, skip: 0, limit: 50 }),
   })
   const sessions = data?.items ?? []
 

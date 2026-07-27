@@ -15,7 +15,7 @@ import {
 export function TrainerDashboard({ user }: { user: AuthState }) {
   const { data, isLoading } = useQuery({
     queryKey: ['sessions', 'trainer', user.county],
-    queryFn: () => listSessions(user.county, 0, 50),
+    queryFn: () => listSessions({ county: user.county, skip: 0, limit: 50 }),
   })
   const sessions = data?.items ?? []
 

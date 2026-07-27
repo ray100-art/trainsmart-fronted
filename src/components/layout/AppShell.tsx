@@ -2,10 +2,11 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   Award, BarChart3, ClipboardList, LayoutDashboard, LogOut,
   ShieldCheck, Users, ChevronRight, Settings, BookOpen, ScrollText,
+  UserCircle, GraduationCap, Building2, HandCoins,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { ROLE_LABELS } from '@/lib/constants'
-import { hasPermission } from '@/lib/roles'
+import { hasPermission, hasAnyPermission } from '@/lib/roles'
 import { BrandLogo, KenyaStripe } from './Brand'
 import { MobileNav } from './MobileNav'
 import { cn } from '@/lib/utils'
@@ -13,9 +14,14 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { to: '/dashboard', label: 'Dashboard',          icon: LayoutDashboard, permission: 'sessions:view' as const },
   { to: '/sessions',  label: 'Sessions',            icon: ClipboardList,   permission: 'sessions:view' as const },
+  { to: '/people',    label: 'People',              icon: UserCircle,      permission: 'people:view' as const },
+  { to: '/certificates', label: 'Certificates',     icon: Award,           permission: 'sessions:view' as const },
+  { to: '/moodle',    label: 'Moodle',              icon: GraduationCap,   permission: 'sessions:view' as const },
   { to: '/reports',   label: 'Reports',             icon: BarChart3,       permission: 'analytics:view' as const },
   { to: '/audit',     label: 'Audit Log',           icon: ScrollText,      permission: 'audit:view' as const },
   { to: '/programs',  label: 'Programs',            icon: BookOpen,        permission: 'programs:manage' as const },
+  { to: '/facilities', label: 'Facilities',         icon: Building2,       permissions: ['programs:manage', 'catalogs:manage'] as const },
+  { to: '/sponsors',  label: 'Sponsors',             icon: HandCoins,       permissions: ['programs:manage', 'catalogs:manage'] as const },
   { to: '/users',     label: 'User Management',     icon: Users,           permission: 'users:manage' as const },
   { to: '/verify',    label: 'Verify Certificate',  icon: ShieldCheck,     permission: null },
 ]
@@ -43,9 +49,12 @@ export function AppShell() {
   const location = useLocation()
   if (!user) return null
 
-  const visibleNav = navItems.filter(
-    (item) => !item.permission || hasPermission(user.role, item.permission),
-  )
+  const visibleNav = navItems.filter((item) => {
+    if ('permissions' in item && item.permissions) {
+      return hasAnyPermission(user.role, [...item.permissions])
+    }
+    return !item.permission || hasPermission(user.role, item.permission)
+  })
 
   return (
     <div className="min-h-screen bg-surface">

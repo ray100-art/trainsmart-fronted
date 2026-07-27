@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { listSessions } from '@/api/sessions'
 import { useAuth } from '@/hooks/useAuth'
 import { hasPermission } from '@/lib/roles'
-import { KENYA_COUNTIES } from '@/lib/constants'
+import { APPROVAL_STATUSES, KENYA_COUNTIES, SESSION_STATUSES } from '@/lib/constants'
 import { SessionCard } from '@/components/sessions/SessionCard'
 import { SessionsSkeleton } from '@/components/ui/PageLoader'
 import { Button } from '@/components/ui/button'
@@ -18,13 +18,22 @@ export function SessionsPage() {
   const { user } = useAuth()
   const [countyFilter, setCountyFilter] = useState('')
   const [search, setSearch] = useState('')
+  const [approvalFilter, setApprovalFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(0)
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['sessions', countyFilter, user?.role, page],
+    queryKey: ['sessions', countyFilter, search, approvalFilter, statusFilter, user?.role, page],
     queryFn: () => {
       const county = countyFilter || (user?.role === 'ROLE_COUNTY_OFFICER' || user?.role === 'ROLE_TRAINER' ? user.county : undefined)
-      return listSessions(county, page * PAGE_SIZE, PAGE_SIZE)
+      return listSessions({
+        county,
+        q: search || undefined,
+        approval_status: approvalFilter || undefined,
+        status: statusFilter || undefined,
+        skip: page * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      })
     },
     enabled: !!user,
   })
@@ -32,12 +41,6 @@ export function SessionsPage() {
   const sessions = data?.items ?? []
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-
-  const filtered = sessions.filter((s) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return s.title.toLowerCase().includes(q) || s.facility.toLowerCase().includes(q) || s.county.toLowerCase().includes(q)
-  })
 
   return (
     <div className="space-y-6">
@@ -47,7 +50,6 @@ export function SessionsPage() {
           <h1 className="mt-1 text-2xl font-black text-gray-900">Training Sessions</h1>
           <p className="text-sm text-gray-500">
             {total} session{total !== 1 ? 's' : ''}
-            {search ? ` · ${filtered.length} match on this page` : ''}
           </p>
         </div>
         {user && hasPermission(user.role, 'sessions:create') && (
@@ -58,11 +60,35 @@ export function SessionsPage() {
       </div>
       <div className="flex flex-wrap gap-3">
         <Input
-          placeholder="Search this page by title, facility, county…"
+          placeholder="Search title, facility, venue, funding…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           className="max-w-sm"
         />
+        <Select
+          value={approvalFilter || 'all'}
+          onValueChange={(v) => { setApprovalFilter(v === 'all' ? '' : v); setPage(0) }}
+        >
+          <SelectTrigger className="w-44"><SelectValue placeholder="Approval status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All approvals</SelectItem>
+            {APPROVAL_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={statusFilter || 'all'}
+          onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v); setPage(0) }}
+        >
+          <SelectTrigger className="w-44"><SelectValue placeholder="Session status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {SESSION_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {user?.role !== 'ROLE_COUNTY_OFFICER' && user?.role !== 'ROLE_TRAINER' && (
           <Select
             value={countyFilter || 'all'}
@@ -85,7 +111,7 @@ export function SessionsPage() {
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-700">
           Could not load sessions. Please try again.
         </div>
-      ) : filtered.length === 0 ? (
+      ) : sessions.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border bg-white py-16 text-center shadow-sm">
           <ClipboardList className="h-10 w-10 text-gray-300" />
           <p className="text-sm font-semibold text-gray-700">No sessions found</p>
@@ -95,7 +121,7 @@ export function SessionsPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {filtered.map((s) => <SessionCard key={s.id} session={s} />)}
+          {sessions.map((s) => <SessionCard key={s.id} session={s} />)}
         </div>
       )}
       {totalPages > 1 && (

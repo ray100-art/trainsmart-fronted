@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { createSession } from '@/api/sessions'
 import { listPrograms } from '@/api/programs'
+import { listSponsors } from '@/api/catalogs'
 import { useAuth } from '@/hooks/useAuth'
 import { KENYA_COUNTIES, SESSION_STATUSES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,9 @@ const schema = z.object({
   program_id: z.string().min(1, 'Training program is required'),
   county: z.string().min(1, 'County is required'),
   facility: z.string().min(2, 'Facility is required'),
+  venue: z.string().optional(),
+  funding_source: z.string().optional(),
+  sponsor_id: z.string().optional(),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
   status: z.enum(SESSION_STATUSES),
@@ -41,6 +45,12 @@ export function SessionCreatePage() {
     queryKey: ['programs'],
     queryFn: () => listPrograms(true),
   })
+
+  const { data: sponsorsData } = useQuery({
+    queryKey: ['sponsors', true],
+    queryFn: () => listSponsors({ active_only: true, limit: 200 }),
+  })
+  const sponsors = sponsorsData?.items ?? []
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -64,6 +74,9 @@ export function SessionCreatePage() {
     const payload = {
       ...data,
       county: countyLocked && user?.county ? user.county : data.county,
+      venue: data.venue || undefined,
+      funding_source: data.funding_source || undefined,
+      sponsor_id: data.sponsor_id || undefined,
     }
     mutation.mutate(payload)
   }
@@ -141,6 +154,37 @@ export function SessionCreatePage() {
                 <Input id="facility" placeholder="Health facility name" {...register('facility')} />
                 {errors.facility && <p className="text-xs text-red-600">{errors.facility.message}</p>}
               </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="venue">Venue (optional)</Label>
+                <Input id="venue" placeholder="Training venue" {...register('venue')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="funding_source">Funding source (optional)</Label>
+                <Input id="funding_source" placeholder="e.g. PEPFAR, GOK" {...register('funding_source')} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sponsor (optional)</Label>
+              <Select
+                value={watch('sponsor_id') || 'none'}
+                onValueChange={(v) => setValue('sponsor_id', v === 'none' ? undefined : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select sponsor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No sponsor</SelectItem>
+                  {sponsors.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.code ? `${s.code} — ${s.name}` : s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

@@ -7,7 +7,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { SetupPasswordPage } from '@/pages/SetupPasswordPage'
 import { VerifyPage } from '@/pages/VerifyPage'
-import { hasPermission } from '@/lib/roles'
+import { hasPermission, hasAnyPermission } from '@/lib/roles'
 
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -36,6 +36,21 @@ const AuditLogPage = lazy(() =>
 const UsersPage = lazy(() =>
   import('@/pages/UsersPage').then((m) => ({ default: m.UsersPage })),
 )
+const PeoplePage = lazy(() =>
+  import('@/pages/PeoplePage').then((m) => ({ default: m.PeoplePage })),
+)
+const CertificatesPage = lazy(() =>
+  import('@/pages/CertificatesPage').then((m) => ({ default: m.CertificatesPage })),
+)
+const MoodlePage = lazy(() =>
+  import('@/pages/MoodlePage').then((m) => ({ default: m.MoodlePage })),
+)
+const FacilitiesPage = lazy(() =>
+  import('@/pages/FacilitiesPage').then((m) => ({ default: m.FacilitiesPage })),
+)
+const SponsorsPage = lazy(() =>
+  import('@/pages/SponsorsPage').then((m) => ({ default: m.SponsorsPage })),
+)
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +75,20 @@ function RoleGuard({
 }) {
   const { user } = useAuth()
   if (!user || !hasPermission(user.role, permission)) {
+    return <Navigate to="/dashboard" replace />
+  }
+  return <>{children}</>
+}
+
+function AnyRoleGuard({
+  permissions,
+  children,
+}: {
+  permissions: Parameters<typeof hasPermission>[1][]
+  children: React.ReactNode
+}) {
+  const { user } = useAuth()
+  if (!user || !hasAnyPermission(user.role, permissions)) {
     return <Navigate to="/dashboard" replace />
   }
   return <>{children}</>
@@ -95,7 +124,47 @@ function AppRoutes() {
               }
             />
             <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
+            <Route
+              path="/people"
+              element={
+                <RoleGuard permission="people:view">
+                  <PeoplePage />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/certificates"
+              element={
+                <RoleGuard permission="sessions:view">
+                  <CertificatesPage />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/moodle"
+              element={
+                <RoleGuard permission="sessions:view">
+                  <MoodlePage />
+                </RoleGuard>
+              }
+            />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              path="/facilities"
+              element={
+                <AnyRoleGuard permissions={['programs:manage', 'catalogs:manage']}>
+                  <FacilitiesPage />
+                </AnyRoleGuard>
+              }
+            />
+            <Route
+              path="/sponsors"
+              element={
+                <AnyRoleGuard permissions={['programs:manage', 'catalogs:manage']}>
+                  <SponsorsPage />
+                </AnyRoleGuard>
+              }
+            />
             <Route
               path="/programs"
               element={

@@ -2,11 +2,12 @@ import { api } from './client'
 import type { Participant } from '@/types'
 
 export async function addParticipant(sessionId: string, payload: {
-  name: string
-  cadre: string
-  facility: string
+  name?: string
+  cadre?: string
+  facility?: string
   status?: string
   staff_number?: string
+  person_id?: string
 }) {
   const { data } = await api.post<Participant>(`/sessions/${sessionId}/participants`, payload)
   return data

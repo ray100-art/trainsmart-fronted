@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import {
-  approveReport, approveSession, getSession, rejectReport, rejectSession, submitReport,
+  approveReport, approveSession, completeSession, getSession, rejectReport, rejectSession, submitReport,
 } from '@/api/sessions'
 import { addParticipant, removeParticipant, toggleAttendance, updateScores } from '@/api/participants'
-import { addTrainer, issueCertificates, removeTrainer } from '@/api/certificates'
+import { listPeople } from '@/api/people'
+import { addTrainer, issueCertificates, removeTrainer, signCertificates } from '@/api/certificates'
 import { useAuth } from '@/hooks/useAuth'
 import { hasPermission } from '@/lib/roles'
 import { CADRE_OPTIONS } from '@/lib/constants'
@@ -23,7 +24,7 @@ import { formatDate, getApiErrorMessage } from '@/lib/utils'
 import { CertificatePrint } from '@/components/certificates/CertificatePrint'
 import {
   ArrowLeft, Award, Printer, Trash2, MapPin, CalendarDays,
-  Users, CheckCircle, XCircle, AlertTriangle, UserPlus, UserCheck,
+  Users, CheckCircle, XCircle, AlertTriangle, UserPlus, UserCheck, PenLine, Flag,
 } from 'lucide-react'
 import type { Participant } from '@/types'
 import { cn } from '@/lib/utils'
@@ -36,8 +37,9 @@ export function SessionDetailPage() {
   const [rejectNote, setRejectNote] = useState('')
   const [reportForm, setReportForm] = useState({ summary: '', challenges: '', recommendations: '' })
   const [participantForm, setParticipantForm] = useState({
-    name: '', cadre: CADRE_OPTIONS[0], facility: '', staff_number: '',
+    name: '', cadre: CADRE_OPTIONS[0], facility: '', staff_number: '', person_id: '',
   })
+  const [peopleSearch, setPeopleSearch] = useState('')
   const [trainerForm, setTrainerForm] = useState({ name: '', cadre: CADRE_OPTIONS[0], phone: '' })
   const [printTarget, setPrintTarget] = useState<Participant | null>(null)
 
@@ -45,6 +47,12 @@ export function SessionDetailPage() {
     queryKey: ['session', sessionId],
     queryFn: () => getSession(sessionId),
     enabled: !!sessionId,
+  })
+
+  const { data: peopleMatches } = useQuery({
+    queryKey: ['people', 'picker', peopleSearch, user?.county],
+    queryFn: () => listPeople({ q: peopleSearch, county: user?.county, limit: 8 }),
+    enabled: peopleSearch.trim().length >= 2,
   })
 
   const invalidate = () => {
@@ -92,6 +100,8 @@ export function SessionDetailPage() {
   const canManageSession = hasPermission(user!.role, 'sessions:create') && !session.certificates_issued
   const canApprove       = hasPermission(user!.role, 'sessions:approve')
   const canIssueCerts    = hasPermission(user!.role, 'certificates:issue')
+  const canComplete      = canManageSession && session.approval_status === 'APPROVED' && session.status !== 'COMPLETED'
+  const canSignCerts     = canIssueCerts && session.certificates_issued && !session.certificates_signed
 
   const eligibleCount = session.participants.filter(
     (p) => p.status === 'PRESENT' && (p.post_test_score ?? 0) >= 80 && !p.certificate_serial,
@@ -125,6 +135,21 @@ export function SessionDetailPage() {
                 <CalendarDays className="h-3.5 w-3.5" />
                 {formatDate(session.start_date)} – {formatDate(session.end_date)}
               </span>
+              {session.venue && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" /> Venue: {session.venue}
+                </span>
+              )}
+              {session.funding_source && (
+                <span className="flex items-center gap-1">
+                  Funding: {session.funding_source}
+                </span>
+              )}
+              {session.sponsor_name && (
+                <span className="flex items-center gap-1">
+                  Sponsor: {session.sponsor_name}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
                 {session.trainee_count} participant{session.trainee_count !== 1 ? 's' : ''}
@@ -204,6 +229,26 @@ export function SessionDetailPage() {
         </Card>
       )}
 
+      {canComplete && (
+        <Card className="border-brand-200 bg-brand-50/50">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Flag className="h-5 w-5 text-brand-700" />
+              <CardTitle className="text-brand-900">Mark training complete</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-brand-800">
+              This session is approved. Mark it as completed when training has finished.
+            </p>
+            <Button onClick={() => runMutation(() => completeSession(sessionId))}>
+              <CheckCircle className="h-4 w-4" />
+              Complete Session
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Tabs ── */}
       <Tabs defaultValue="overview">
         <TabsList className="w-full justify-start overflow-x-auto rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
@@ -232,10 +277,15 @@ export function SessionDetailPage() {
                 {[
                   ['Facility',      session.facility],
                   ['County',        session.county],
+                  session.venue ? ['Venue', session.venue] : null,
+                  session.funding_source ? ['Funding Source', session.funding_source] : null,
+                  session.sponsor_name ? ['Sponsor', session.sponsor_name] : null,
                   ['Start Date',    formatDate(session.start_date)],
                   ['End Date',      formatDate(session.end_date)],
                   ['Participants',  String(session.trainee_count)],
-                  ['Certificates',  session.certificates_issued ? 'Issued ✓' : 'Not issued'],
+                  ['Certificates',  session.certificates_issued
+                    ? (session.certificates_signed ? 'Issued & signed ✓' : 'Issued (pending sign)')
+                    : 'Not issued'],
                   session.approved_by_name ? ['Reviewed by', session.approved_by_name] : null,
                 ].filter((x): x is string[] => x !== null).map(([k, v]) => (
                   <div key={k!}>
@@ -282,14 +332,56 @@ export function SessionDetailPage() {
                 </div>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2 space-y-2">
+                  <Label>Find in people registry</Label>
+                  <Input
+                    placeholder="Search by name or National ID…"
+                    value={peopleSearch}
+                    onChange={(e) => setPeopleSearch(e.target.value)}
+                  />
+                  {peopleMatches && peopleMatches.items.length > 0 && (
+                    <div className="max-h-40 overflow-y-auto rounded-lg border bg-white text-sm">
+                      {peopleMatches.items.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className="flex w-full flex-col items-start gap-0.5 border-b px-3 py-2 text-left last:border-0 hover:bg-brand-50"
+                          onClick={() => {
+                            const fullName = [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(' ')
+                            setParticipantForm({
+                              person_id: p.id,
+                              name: fullName,
+                              cadre: p.qualification,
+                              facility: p.facility,
+                              staff_number: '',
+                            })
+                            setPeopleSearch(`${fullName} (${p.national_id})`)
+                          }}
+                        >
+                          <span className="font-medium text-gray-900">
+                            {p.first_name} {p.last_name}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ID {p.national_id} · {p.qualification} · {p.facility}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {participantForm.person_id && (
+                    <p className="text-xs text-brand-700">
+                      Linked to people registry. Clear search to add manually instead.
+                    </p>
+                  )}
+                </div>
                 <Input
                   placeholder="Full name *"
                   value={participantForm.name}
-                  onChange={(e) => setParticipantForm({ ...participantForm, name: e.target.value })}
+                  onChange={(e) => setParticipantForm({ ...participantForm, name: e.target.value, person_id: '' })}
                 />
                 <Select
                   value={participantForm.cadre}
-                  onValueChange={(v) => setParticipantForm({ ...participantForm, cadre: v })}
+                  onValueChange={(v) => setParticipantForm({ ...participantForm, cadre: v, person_id: participantForm.person_id })}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -299,22 +391,26 @@ export function SessionDetailPage() {
                 <Input
                   placeholder="Health facility *"
                   value={participantForm.facility}
-                  onChange={(e) => setParticipantForm({ ...participantForm, facility: e.target.value })}
+                  onChange={(e) => setParticipantForm({ ...participantForm, facility: e.target.value, person_id: '' })}
                 />
                 <Input
-                  placeholder="Staff number (optional)"
+                  placeholder="Staff / National ID (optional)"
                   value={participantForm.staff_number}
                   onChange={(e) => setParticipantForm({ ...participantForm, staff_number: e.target.value })}
                 />
                 <Button
                   className="sm:col-span-2"
-                  disabled={!participantForm.name || !participantForm.facility}
+                  disabled={!participantForm.person_id && (!participantForm.name || !participantForm.facility)}
                   onClick={() => runMutation(async () => {
                     await addParticipant(sessionId, {
-                      ...participantForm,
+                      person_id: participantForm.person_id || undefined,
+                      name: participantForm.name || undefined,
+                      cadre: participantForm.cadre || undefined,
+                      facility: participantForm.facility || undefined,
                       staff_number: participantForm.staff_number || undefined,
                     })
-                    setParticipantForm({ name: '', cadre: CADRE_OPTIONS[0], facility: '', staff_number: '' })
+                    setParticipantForm({ name: '', cadre: CADRE_OPTIONS[0], facility: '', staff_number: '', person_id: '' })
+                    setPeopleSearch('')
                   })}
                 >
                   <UserPlus className="h-4 w-4" />
@@ -621,11 +717,23 @@ export function SessionDetailPage() {
             </CardHeader>
             <CardContent className="space-y-5">
               {session.certificates_issued ? (
-                <div className="flex items-center gap-2 rounded-xl bg-brand-50 px-4 py-3 ring-1 ring-brand-200">
-                  <CheckCircle className="h-4 w-4 text-brand-600" />
-                  <p className="text-sm font-semibold text-brand-800">
-                    Certificates have been issued for this session.
-                  </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 rounded-xl bg-brand-50 px-4 py-3 ring-1 ring-brand-200">
+                    <CheckCircle className="h-4 w-4 text-brand-600" />
+                    <p className="text-sm font-semibold text-brand-800">
+                      Certificates have been issued for this session.
+                      {session.certificates_signed && ' They have been signed by national admin.'}
+                    </p>
+                  </div>
+                  {canSignCerts && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+                      <p className="text-sm text-amber-900">Certificates are awaiting national signature.</p>
+                      <Button onClick={() => runMutation(() => signCertificates(sessionId))}>
+                        <PenLine className="h-4 w-4" />
+                        Sign Certificates
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3">

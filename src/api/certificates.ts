@@ -1,5 +1,20 @@
 import { api } from './client'
-import type { SessionTrainer, TrainingSession } from '@/types'
+import type { PaginatedResponse, SessionSummary, SessionTrainer, TrainingSession } from '@/types'
+
+export type CertificatePipelineTab = 'all' | 'pending' | 'certified' | 'signed'
+
+export async function listCertificatePipeline(params: {
+  tab?: CertificatePipelineTab
+  county?: string
+  skip?: number
+  limit?: number
+} = {}) {
+  const { tab = 'all', skip = 0, limit = 50, county } = params
+  const { data } = await api.get<PaginatedResponse<SessionSummary>>('/certificates/pipeline', {
+    params: { tab, skip, limit, ...(county ? { county } : {}) },
+  })
+  return data
+}
 
 export async function addTrainer(sessionId: string, payload: {
   name: string
@@ -16,6 +31,11 @@ export async function removeTrainer(sessionId: string, trainerId: string) {
 
 export async function issueCertificates(sessionId: string) {
   const { data } = await api.patch<TrainingSession>(`/certificates/sessions/${sessionId}/issue`)
+  return data
+}
+
+export async function signCertificates(sessionId: string) {
+  const { data } = await api.patch<TrainingSession>(`/certificates/sessions/${sessionId}/sign`)
   return data
 }
 

@@ -16,7 +16,7 @@ import { hasPermission } from '@/lib/roles'
 export function NationalAdminDashboard({ user }: { user: AuthState }) {
   const { data, isLoading } = useQuery({
     queryKey: ['sessions', 'national'],
-    queryFn: () => listSessions(undefined, 0, 50),
+    queryFn: () => listSessions({ skip: 0, limit: 50 }),
   })
   const sessions = data?.items ?? []
 

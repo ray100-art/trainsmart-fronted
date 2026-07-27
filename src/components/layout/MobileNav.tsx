@@ -1,16 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
-import { BarChart3, ClipboardList, LayoutDashboard, ShieldCheck, Users, ScrollText, BookOpen } from 'lucide-react'
+import { ClipboardList, LayoutDashboard, ShieldCheck, UserCircle, Award } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { hasPermission } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
+/** Keep mobile bar to primary actions only — rest via desktop sidebar / pages. */
 const items = [
   { to: '/dashboard', label: 'Home',     icon: LayoutDashboard, permission: 'sessions:view' as const },
   { to: '/sessions',  label: 'Sessions', icon: ClipboardList,   permission: 'sessions:view' as const },
-  { to: '/reports',   label: 'Reports',  icon: BarChart3,       permission: 'analytics:view' as const },
-  { to: '/audit',     label: 'Audit',    icon: ScrollText,      permission: 'audit:view' as const },
-  { to: '/programs',  label: 'Programs', icon: BookOpen,        permission: 'programs:manage' as const },
-  { to: '/users',     label: 'Users',    icon: Users,           permission: 'users:manage' as const },
+  { to: '/people',    label: 'People',   icon: UserCircle,      permission: 'people:view' as const },
+  { to: '/certificates', label: 'Certs', icon: Award,           permission: 'sessions:view' as const },
   { to: '/verify',    label: 'Verify',   icon: ShieldCheck,     permission: null },
 ]
 
