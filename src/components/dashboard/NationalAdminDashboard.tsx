@@ -14,10 +14,11 @@ import {
 import { hasPermission } from '@/lib/roles'
 
 export function NationalAdminDashboard({ user }: { user: AuthState }) {
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['sessions', 'national'],
-    queryFn: () => listSessions(),
+    queryFn: () => listSessions(undefined, 0, 50),
   })
+  const sessions = data?.items ?? []
 
   const { data: stats } = useQuery({
     queryKey: ['stats', 'national'],

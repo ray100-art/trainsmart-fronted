@@ -8,28 +8,18 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-api.interceptors.request.use((config) => {
-  const raw = localStorage.getItem('trainsmart_auth')
-  if (raw) {
-    try {
-      const auth = JSON.parse(raw) as { token?: string }
-      if (auth.token) {
-        config.headers.Authorization = `Bearer ${auth.token}`
-      }
-    } catch {
-      localStorage.removeItem('trainsmart_auth')
-    }
-  }
-  return config
-})
-
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+    if (
+      error.response?.status === 401 &&
+      !error.config?.url?.includes('/auth/login') &&
+      !error.config?.url?.includes('/auth/setup-password')
+    ) {
       localStorage.removeItem('trainsmart_auth')
-      const path = window.location.pathname
-      if (path !== '/login' && !path.startsWith('/setup-password') && !path.startsWith('/verify')) {
+      if (!window.location.pathname.startsWith('/login') &&
+          !window.location.pathname.startsWith('/verify') &&
+          !window.location.pathname.startsWith('/setup-password')) {
         window.location.href = '/login'
       }
     }

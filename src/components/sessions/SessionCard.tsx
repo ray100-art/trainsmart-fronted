@@ -1,4 +1,4 @@
-import type { TrainingSession } from '@/types'
+import type { SessionSummary } from '@/types'
 import { statusBadgeVariant } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { Link } from 'react-router-dom'
@@ -6,7 +6,7 @@ import { CalendarDays, MapPin, Users, ArrowRight, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SessionCardProps {
-  session: TrainingSession
+  session: SessionSummary
 }
 
 const statusAccent: Record<string, string> = {

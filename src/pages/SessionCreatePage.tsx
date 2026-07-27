@@ -35,6 +35,7 @@ export function SessionCreatePage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
+  const countyLocked = user?.role === 'ROLE_TRAINER' || user?.role === 'ROLE_COUNTY_OFFICER'
 
   const { data: programs = [], isLoading: programsLoading } = useQuery({
     queryKey: ['programs'],
@@ -60,7 +61,11 @@ export function SessionCreatePage() {
 
   const onSubmit = (data: FormData) => {
     setError('')
-    mutation.mutate(data)
+    const payload = {
+      ...data,
+      county: countyLocked && user?.county ? user.county : data.county,
+    }
+    mutation.mutate(payload)
   }
 
   return (
@@ -111,16 +116,24 @@ export function SessionCreatePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>County</Label>
-                <Select value={watch('county')} onValueChange={(v) => setValue('county', v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select county" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {KENYA_COUNTIES.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {countyLocked ? (
+                  <>
+                    <Input value={user?.county ?? ''} disabled readOnly />
+                    <input type="hidden" {...register('county')} />
+                    <p className="text-xs text-gray-500">County is locked to your assigned county.</p>
+                  </>
+                ) : (
+                  <Select value={watch('county')} onValueChange={(v) => setValue('county', v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select county" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {KENYA_COUNTIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {errors.county && <p className="text-xs text-red-600">{errors.county.message}</p>}
               </div>
               <div className="space-y-2">

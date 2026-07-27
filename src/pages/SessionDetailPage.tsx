@@ -41,7 +41,7 @@ export function SessionDetailPage() {
   const [trainerForm, setTrainerForm] = useState({ name: '', cadre: CADRE_OPTIONS[0], phone: '' })
   const [printTarget, setPrintTarget] = useState<Participant | null>(null)
 
-  const { data: session, isLoading } = useQuery({
+  const { data: session, isLoading, isError, error: loadError, refetch } = useQuery({
     queryKey: ['session', sessionId],
     queryFn: () => getSession(sessionId),
     enabled: !!sessionId,
@@ -64,12 +64,27 @@ export function SessionDetailPage() {
     onError: (err) => setError(getApiErrorMessage(err)),
   })
 
-  if (isLoading || !session) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="h-8 w-48 animate-pulse rounded-lg bg-gray-100" />
         <div className="h-32 animate-pulse rounded-xl bg-gray-100" />
         <div className="h-64 animate-pulse rounded-xl bg-gray-100" />
+      </div>
+    )
+  }
+
+  if (isError || !session) {
+    return (
+      <div className="space-y-4 rounded-xl border border-red-200 bg-red-50 px-5 py-8">
+        <p className="text-sm font-semibold text-red-800">Could not load this session.</p>
+        <p className="text-sm text-red-700">{getApiErrorMessage(loadError) || 'Session not found or you do not have access.'}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/sessions">Back to sessions</Link>
+          </Button>
+        </div>
       </div>
     )
   }
@@ -241,6 +256,20 @@ export function SessionDetailPage() {
 
         {/* Participants tab */}
         <TabsContent value="participants" className="mt-4 space-y-4">
+          {canManageSession && session.approval_status !== 'APPROVED' && (
+            <Card className="border-amber-200 bg-amber-50/50">
+              <CardContent className="flex items-start gap-3 py-4">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div>
+                  <p className="font-semibold text-amber-900">Session approval required</p>
+                  <p className="mt-1 text-sm text-amber-800">
+                    Participants can only be added after a County Officer approves this session.
+                    Current status: <strong>{session.approval_status}</strong>.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {canManageSession && session.approval_status === 'APPROVED' && (
             <ParticipantBulkImport sessionId={sessionId} onImported={invalidate} />
           )}

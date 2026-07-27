@@ -1,9 +1,13 @@
 import { api } from './client'
-import type { TrainingSession } from '@/types'
+import type { PaginatedResponse, SessionSummary, TrainingSession } from '@/types'
 
-export async function listSessions(county?: string) {
-  const { data } = await api.get<TrainingSession[]>('/sessions', {
-    params: county ? { county } : undefined,
+export async function listSessions(county?: string, skip = 0, limit = 50) {
+  const { data } = await api.get<PaginatedResponse<SessionSummary>>('/sessions', {
+    params: {
+      skip,
+      limit,
+      ...(county ? { county } : {}),
+    },
   })
   return data
 }

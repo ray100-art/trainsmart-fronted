@@ -33,10 +33,11 @@ export function UsersPage() {
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: listUsers,
+    queryFn: () => listUsers(0, 100),
   })
+  const users = data?.items ?? []
 
   const { register, handleSubmit, setValue, watch, reset, formState: { isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),

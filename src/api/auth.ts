@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { LoginResponse, User } from '@/types'
+import type { LoginResponse, PaginatedResponse, User } from '@/types'
 
 export async function login(username: string, password: string) {
   const { data } = await api.post<LoginResponse>('/auth/login', { username, password })
@@ -42,8 +42,10 @@ export async function registerUser(payload: {
   return data
 }
 
-export async function listUsers() {
-  const { data } = await api.get<User[]>('/auth/users')
+export async function listUsers(skip = 0, limit = 50) {
+  const { data } = await api.get<PaginatedResponse<User>>('/auth/users', {
+    params: { skip, limit },
+  })
   return data
 }
 

@@ -7,7 +7,6 @@ export type UserRole =
   | 'ROLE_TRAINEE'
 
 export interface LoginResponse {
-  token?: string
   role: UserRole
   county: string
   username: string
@@ -45,7 +44,7 @@ export interface SessionTrainer {
   phone: string
 }
 
-export interface TrainingSession {
+export interface SessionSummary {
   id: string
   title: string
   program_id?: string | null
@@ -61,17 +60,27 @@ export interface TrainingSession {
   approval_note?: string | null
   approved_by?: string | null
   approved_by_name?: string | null
-  report_summary?: string | null
-  report_challenges?: string | null
-  report_recommendations?: string | null
   report_submitted_at?: string | null
   report_approval_status: string
-  report_approval_note?: string | null
   report_approved_by?: string | null
   report_approved_by_name?: string | null
   certificates_issued: boolean
+}
+
+export interface TrainingSession extends SessionSummary {
+  report_summary?: string | null
+  report_challenges?: string | null
+  report_recommendations?: string | null
+  report_approval_note?: string | null
   participants: Participant[]
   trainers: SessionTrainer[]
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  skip: number
+  limit: number
 }
 
 export interface CertificateVerification {
@@ -91,7 +100,6 @@ export interface CertificateVerification {
 }
 
 export interface AuthState {
-  token?: string
   role: UserRole
   county: string
   username: string

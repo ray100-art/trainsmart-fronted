@@ -8,10 +8,11 @@ import { DashboardHeader, SectionHeader, SessionGridSkeleton } from './shared'
 import { AlertCircle, FileCheck, GraduationCap, Users, MapPin } from 'lucide-react'
 
 export function CountyOfficerDashboard({ user }: { user: AuthState }) {
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['sessions', 'county', user.county],
-    queryFn: () => listSessions(user.county),
+    queryFn: () => listSessions(user.county, 0, 50),
   })
+  const sessions = data?.items ?? []
 
   const { data: stats } = useQuery({
     queryKey: ['stats', 'county', user.county],

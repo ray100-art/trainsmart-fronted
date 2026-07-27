@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { login as apiLogin, logout as apiLogout, getMe } from '@/api/auth'
 import type { AuthState, User, UserRole } from '@/types'
 
+/** UI profile cache only — JWT lives in httpOnly cookie, never localStorage. */
 const STORAGE_KEY = 'trainsmart_auth'
 
 interface AuthContextValue {
@@ -26,25 +27,16 @@ function profileToAuth(profile: User): AuthState {
   }
 }
 
-function loadStoredToken(): string | undefined {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return undefined
-    return (JSON.parse(raw) as AuthState).token
-  } catch {
-    return undefined
-  }
-}
-
-function authFromProfile(profile: User): AuthState {
-  const auth = profileToAuth(profile)
-  const token = loadStoredToken()
-  if (token) auth.token = token
-  return auth
-}
-
 function persistAuth(auth: AuthState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(auth))
+  const { role, county, username, full_name, staff_number } = auth
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ role, county, username, full_name, staff_number }),
+  )
+}
+
+function clearPersistedAuth() {
+  localStorage.removeItem(STORAGE_KEY)
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -53,15 +45,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    // Clear any legacy JWT stored from older builds
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as { token?: string }
+        if (parsed.token) {
+          const { token: _t, ...rest } = parsed
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(rest))
+        }
+      }
+    } catch {
+      clearPersistedAuth()
+    }
+
     getMe()
       .then((p) => {
         setProfile(p)
-        const auth = authFromProfile(p)
+        const auth = profileToAuth(p)
         setUser(auth)
         persistAuth(auth)
       })
       .catch(() => {
-        localStorage.removeItem(STORAGE_KEY)
+        clearPersistedAuth()
         setUser(null)
         setProfile(null)
       })
@@ -71,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshAuth = useCallback(async () => {
     const p = await getMe()
     setProfile(p)
-    const auth = authFromProfile(p)
+    const auth = profileToAuth(p)
     setUser(auth)
     persistAuth(auth)
   }, [])
@@ -79,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const data = await apiLogin(username, password)
     const auth: AuthState = {
-      token: data.token,
       role: data.role,
       county: data.county,
       username: data.username,
@@ -98,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Clear local state even if server call fails
     }
-    localStorage.removeItem(STORAGE_KEY)
+    clearPersistedAuth()
     setUser(null)
     setProfile(null)
   }, [])

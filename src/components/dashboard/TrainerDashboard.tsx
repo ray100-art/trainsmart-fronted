@@ -13,14 +13,15 @@ import {
 } from 'lucide-react'
 
 export function TrainerDashboard({ user }: { user: AuthState }) {
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['sessions', 'trainer', user.county],
-    queryFn: () => listSessions(user.county),
+    queryFn: () => listSessions(user.county, 0, 50),
   })
+  const sessions = data?.items ?? []
 
   const { data: stats } = useQuery({
-    queryKey: ['stats', 'trainer'],
-    queryFn: () => getOverviewStats(),
+    queryKey: ['stats', 'trainer', user.county],
+    queryFn: () => getOverviewStats(user.county),
   })
 
   const hour = new Date().getHours()
