@@ -20,19 +20,14 @@ export function CertificatePrint({ session, participant }: CertificatePrintProps
           <div className="mb-6 text-center">
             <div className="mb-4 flex items-center justify-center gap-6">
               <img
-                src={BRAND_LOGOS.coatOfArms}
+                src={BRAND_LOGOS.moh}
                 alt="Ministry of Health Kenya"
-                className="h-16 w-auto object-contain"
-                referrerPolicy="no-referrer"
+                className="h-20 w-auto object-contain"
               />
               <img
                 src={BRAND_LOGOS.nascop}
                 alt="NASCOP"
-                className="h-10 w-auto object-contain"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.src = '/brand/nascop-logo-hq.png'
-                }}
+                className="h-12 w-auto object-contain"
               />
             </div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">

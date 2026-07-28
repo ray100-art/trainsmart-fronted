@@ -70,8 +70,8 @@ export function LoginPage() {
           </ul>
         </div>
         <div className="relative px-8 pb-8 md:px-12">
-          <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-            <PartnerLogos size="sm" />
+          <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
+            <PartnerLogos size="md" />
           </div>
         </div>
       </div>

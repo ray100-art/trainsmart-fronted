@@ -12,34 +12,6 @@ export function KenyaStripe() {
   )
 }
 
-function RemoteImg({
-  src,
-  fallback,
-  alt,
-  className,
-}: {
-  src: string
-  fallback?: string
-  alt: string
-  className?: string
-}) {
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      draggable={false}
-      loading="lazy"
-      referrerPolicy="no-referrer"
-      onError={(e) => {
-        if (fallback && e.currentTarget.src !== fallback) {
-          e.currentTarget.src = fallback
-        }
-      }}
-    />
-  )
-}
-
 type BrandLogoProps = {
   compact?: boolean
   light?: boolean
@@ -47,7 +19,7 @@ type BrandLogoProps = {
 }
 
 /**
- * TrainSMART mark with MoH crest loaded from Wikimedia Commons.
+ * TrainSMART product mark with MoH crest (full colour on a white plate).
  */
 export function BrandLogo({ compact = false, light = false, className }: BrandLogoProps) {
   const textColor = light ? 'text-white' : 'text-brand-800'
@@ -58,15 +30,15 @@ export function BrandLogo({ compact = false, light = false, className }: BrandLo
     <div className={cn('flex items-center gap-3', className)}>
       <div
         className={cn(
-          'flex shrink-0 items-center justify-center rounded-xl bg-white shadow-sm',
+          'flex shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5',
           compact ? 'h-11 px-1.5' : 'h-12 px-2',
         )}
       >
-        <RemoteImg
-          src={BRAND_LOGOS.coatOfArms}
-          fallback={BRAND_LOGOS.moh}
+        <img
+          src={BRAND_LOGOS.mohCompact}
           alt="Republic of Kenya — Ministry of Health"
           className={cn('w-auto object-contain', compact ? 'h-9' : 'h-10')}
+          draggable={false}
         />
       </div>
       <div>
@@ -83,7 +55,7 @@ export function BrandLogo({ compact = false, light = false, className }: BrandLo
   )
 }
 
-/** MoH + NASCOP partnership logos from public internet URLs */
+/** MoH + NASCOP logos — used on login, verify, and certificates */
 export function PartnerLogos({
   size = 'md',
   className,
@@ -91,46 +63,46 @@ export function PartnerLogos({
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }) {
-  const mohH = size === 'lg' ? 'h-16' : size === 'sm' ? 'h-10' : 'h-12'
-  const nascopH = size === 'lg' ? 'h-12' : size === 'sm' ? 'h-7' : 'h-9'
+  const mohH = size === 'lg' ? 'h-24' : size === 'sm' ? 'h-14' : 'h-20'
+  const nascopH = size === 'lg' ? 'h-14' : size === 'sm' ? 'h-9' : 'h-11'
 
   return (
-    <div className={cn('flex flex-wrap items-center justify-center gap-5 sm:gap-7', className)}>
-      <RemoteImg
+    <div className={cn('flex flex-wrap items-center justify-center gap-4 sm:gap-8', className)}>
+      <img
         src={BRAND_LOGOS.moh}
-        fallback={BRAND_LOGOS.mohSite}
         alt="Republic of Kenya Ministry of Health"
-        className={cn(mohH, 'w-auto max-w-[220px] object-contain')}
+        className={cn(mohH, 'w-auto max-w-[200px] object-contain')}
+        draggable={false}
       />
-      <div className="hidden h-10 w-px bg-gray-200 sm:block" aria-hidden="true" />
-      <RemoteImg
+      <div className="hidden h-12 w-px bg-gray-200 sm:block" aria-hidden="true" />
+      <img
         src={BRAND_LOGOS.nascop}
-        fallback="/brand/nascop-logo-hq.png"
         alt="NASCOP"
-        className={cn(nascopH, 'w-auto max-w-[200px] object-contain')}
+        className={cn(nascopH, 'w-auto max-w-[220px] object-contain')}
+        draggable={false}
       />
     </div>
   )
 }
 
-/** Compact dual marks on white plates for dark headers */
+/** Compact dual marks on white plates */
 export function OfficialMarks({ className }: { className?: string }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className="flex h-9 items-center rounded-lg bg-white px-1.5 shadow-sm">
-        <RemoteImg
-          src={BRAND_LOGOS.coatOfArms}
-          fallback={BRAND_LOGOS.moh}
+      <div className="flex h-10 items-center rounded-lg bg-white px-1.5 shadow-sm ring-1 ring-black/5">
+        <img
+          src={BRAND_LOGOS.mohCompact}
           alt="Ministry of Health"
-          className="h-7 w-auto object-contain"
+          className="h-8 w-auto object-contain"
+          draggable={false}
         />
       </div>
-      <div className="flex h-9 items-center rounded-lg bg-white px-2 shadow-sm">
-        <RemoteImg
-          src={BRAND_LOGOS.nascop}
-          fallback="/brand/nascop-logo-hq.png"
+      <div className="flex h-10 items-center rounded-lg bg-white px-2 shadow-sm ring-1 ring-black/5">
+        <img
+          src={BRAND_LOGOS.nascopCompact}
           alt="NASCOP"
-          className="h-5 w-auto object-contain"
+          className="h-6 w-auto object-contain"
+          draggable={false}
         />
       </div>
     </div>
