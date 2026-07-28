@@ -13,6 +13,7 @@ export const APPROVAL_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const
 
 export const ROLE_LABELS: Record<string, string> = {
   ROLE_TRAINER: 'Field Trainer',
+  ROLE_SITE_COORDINATOR: 'Site Coordinator',
   ROLE_COUNTY_OFFICER: 'County Training Officer',
   ROLE_NATIONAL_ADMIN: 'National Administrator',
   ROLE_ME_MANAGER: 'M&E Manager',

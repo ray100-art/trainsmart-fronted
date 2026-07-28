@@ -16,6 +16,11 @@ export async function setupPassword(token: string, new_password: string) {
   return data
 }
 
+export async function forgotPassword(identifier: string) {
+  const { data } = await api.post<{ message: string }>('/auth/forgot-password', { identifier })
+  return data
+}
+
 export async function getMe() {
   const { data } = await api.get<User>('/auth/me')
   return data

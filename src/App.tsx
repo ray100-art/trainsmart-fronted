@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { SetupPasswordPage } from '@/pages/SetupPasswordPage'
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { VerifyPage } from '@/pages/VerifyPage'
 import { hasPermission, hasAnyPermission } from '@/lib/roles'
 
@@ -100,6 +101,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/setup-password" element={<SetupPasswordPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/verify" element={<VerifyPage />} />
         <Route path="/verify/:serial" element={<VerifyPage />} />
 

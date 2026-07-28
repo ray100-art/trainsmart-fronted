@@ -56,7 +56,7 @@ export function LegacyCertificateImport() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-gray-600">
-          Import certificates from the old TrainSMART system (pre-2026 and post-2026) so they
+          Import certificates from the old TrainSMART system (pre-2018 and post-2018) so they
           remain verifiable at nhcsc.nascop.org.
         </p>
         <div className="flex flex-wrap gap-2">

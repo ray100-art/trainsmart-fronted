@@ -105,6 +105,11 @@ export function LoginPage() {
               {isSubmitting ? 'Signing in…' : 'Sign in →'}
             </Button>
           </form>
+          <p className="mt-4 text-center text-sm text-gray-500">
+            <Link to="/forgot-password" className="font-semibold text-brand-700 hover:text-brand-600 hover:underline">
+              Forgot password?
+            </Link>
+          </p>
           <div className="mt-8 border-t border-gray-200 pt-6">
             <p className="text-center text-sm text-gray-500">
               Need to verify a certificate?{' '}

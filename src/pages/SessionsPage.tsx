@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listSessions } from '@/api/sessions'
 import { useAuth } from '@/hooks/useAuth'
-import { hasPermission } from '@/lib/roles'
+import { hasPermission, isCountyScopedRole } from '@/lib/roles'
 import { APPROVAL_STATUSES, KENYA_COUNTIES, SESSION_STATUSES } from '@/lib/constants'
 import { SessionCard } from '@/components/sessions/SessionCard'
 import { SessionsSkeleton } from '@/components/ui/PageLoader'
@@ -25,7 +25,7 @@ export function SessionsPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['sessions', countyFilter, search, approvalFilter, statusFilter, user?.role, page],
     queryFn: () => {
-      const county = countyFilter || (user?.role === 'ROLE_COUNTY_OFFICER' || user?.role === 'ROLE_TRAINER' ? user.county : undefined)
+      const county = countyFilter || (user && isCountyScopedRole(user.role) ? user.county : undefined)
       return listSessions({
         county,
         q: search || undefined,
@@ -89,7 +89,7 @@ export function SessionsPage() {
             ))}
           </SelectContent>
         </Select>
-        {user?.role !== 'ROLE_COUNTY_OFFICER' && user?.role !== 'ROLE_TRAINER' && (
+        {user && !isCountyScopedRole(user.role) && (
           <Select
             value={countyFilter || 'all'}
             onValueChange={(v) => {

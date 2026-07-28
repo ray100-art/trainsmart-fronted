@@ -5,8 +5,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { createSession } from '@/api/sessions'
 import { listPrograms } from '@/api/programs'
-import { listSponsors } from '@/api/catalogs'
+import { listSponsors, listFacilities } from '@/api/catalogs'
 import { useAuth } from '@/hooks/useAuth'
+import { isCountyScopedRole } from '@/lib/roles'
 import { KENYA_COUNTIES, SESSION_STATUSES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,7 +40,7 @@ export function SessionCreatePage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
-  const countyLocked = user?.role === 'ROLE_TRAINER' || user?.role === 'ROLE_COUNTY_OFFICER'
+  const countyLocked = !!user && isCountyScopedRole(user.role)
 
   const { data: programs = [], isLoading: programsLoading } = useQuery({
     queryKey: ['programs'],
@@ -59,6 +60,14 @@ export function SessionCreatePage() {
       status: 'UPCOMING',
     },
   })
+
+  const selectedCounty = watch('county') || user?.county || ''
+  const { data: facilitiesData } = useQuery({
+    queryKey: ['facilities', selectedCounty],
+    queryFn: () => listFacilities({ county: selectedCounty || undefined, active_only: true, limit: 200 }),
+    enabled: !!selectedCounty,
+  })
+  const facilities = facilitiesData?.items ?? []
 
   const mutation = useMutation({
     mutationFn: createSession,
@@ -136,7 +145,7 @@ export function SessionCreatePage() {
                     <p className="text-xs text-gray-500">County is locked to your assigned county.</p>
                   </>
                 ) : (
-                  <Select value={watch('county')} onValueChange={(v) => setValue('county', v)}>
+                  <Select value={watch('county')} onValueChange={(v) => { setValue('county', v); setValue('facility', '') }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select county" />
                     </SelectTrigger>
@@ -151,8 +160,26 @@ export function SessionCreatePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="facility">Facility</Label>
-                <Input id="facility" placeholder="Health facility name" {...register('facility')} />
+                {facilities.length > 0 ? (
+                  <Select value={watch('facility') || undefined} onValueChange={(v) => setValue('facility', v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select facility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {facilities.map((f) => (
+                        <SelectItem key={f.id} value={f.name}>
+                          {f.mfl_code ? `${f.name} (${f.mfl_code})` : f.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input id="facility" placeholder="Health facility name" {...register('facility')} />
+                )}
                 {errors.facility && <p className="text-xs text-red-600">{errors.facility.message}</p>}
+                {facilities.length === 0 && (
+                  <p className="text-xs text-gray-500">No catalog facilities — type the facility name.</p>
+                )}
               </div>
             </div>
 

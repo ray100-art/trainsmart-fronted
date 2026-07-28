@@ -91,8 +91,8 @@ export function VerifyPage() {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {([
-                ['post_2018', 'On or after 1 Jan 2026'],
-                ['pre_2018', 'Before 1 Jan 2026'],
+                ['post_2018', 'On or after 1 Jan 2018'],
+                ['pre_2018', 'Before 1 Jan 2018'],
               ] as const).map(([value, label]) => (
                 <button
                   key={value}

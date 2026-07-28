@@ -11,6 +11,7 @@ export function DashboardPage() {
 
   const dashboards: Partial<Record<UserRole, React.ReactNode>> = {
     ROLE_TRAINER:         <TrainerDashboard user={user} />,
+    ROLE_SITE_COORDINATOR: <TrainerDashboard user={user} />,
     ROLE_COUNTY_OFFICER:  <CountyOfficerDashboard user={user} />,
     ROLE_NATIONAL_ADMIN:  <NationalAdminDashboard user={user} />,
     ROLE_ME_MANAGER:      <MEManagerDashboard user={user} />,

@@ -47,3 +47,17 @@ export async function updatePerson(personId: string, payload: Partial<{
   const { data } = await api.patch<Person>(`/people/${personId}`, payload)
   return data
 }
+
+export async function importPeopleCsv(file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await api.post<{
+    imported: number
+    skipped: number
+    error_count: number
+    errors: { row: number; error: string }[]
+  }>('/people/import', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}

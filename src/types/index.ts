@@ -1,5 +1,6 @@
 export type UserRole =
   | 'ROLE_TRAINER'
+  | 'ROLE_SITE_COORDINATOR'
   | 'ROLE_COUNTY_OFFICER'
   | 'ROLE_NATIONAL_ADMIN'
   | 'ROLE_ME_MANAGER'
