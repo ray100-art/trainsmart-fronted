@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { BrandLogo, KenyaStripe } from '@/components/layout/Brand'
+import { BrandLogo, KenyaStripe, PartnerLogos } from '@/components/layout/Brand'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -70,14 +70,8 @@ export function LoginPage() {
           </ul>
         </div>
         <div className="relative px-8 pb-8 md:px-12">
-          <div className="flex items-center gap-3 rounded-xl bg-white/8 px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-kenya-red">
-              <span className="text-xs font-black text-white">MOH</span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-white">Ministry of Health Kenya</p>
-              <p className="text-[11px] text-white/50">NASCOP · nhcsc.nascop.org</p>
-            </div>
+          <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
+            <PartnerLogos size="sm" />
           </div>
         </div>
       </div>

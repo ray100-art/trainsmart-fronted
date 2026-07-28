@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { verifyCertificate } from '@/api/certificates'
-import { BrandLogo, KenyaStripe } from '@/components/layout/Brand'
+import { BrandLogo, KenyaStripe, PartnerLogos } from '@/components/layout/Brand'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { formatDate, getApiErrorMessage } from '@/lib/utils'
@@ -58,8 +58,8 @@ export function VerifyPage() {
       </header>
       <div className="mx-auto max-w-2xl px-4 py-10">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-700 shadow-lg">
-            <ShieldCheck className="h-7 w-7 text-white" />
+          <div className="mb-5 rounded-2xl border border-gray-100 bg-white px-6 py-4 shadow-sm">
+            <PartnerLogos size="md" />
           </div>
           <h1 className="text-2xl font-black text-gray-900">Certificate Verification</h1>
           <p className="mt-1 text-sm text-gray-500">

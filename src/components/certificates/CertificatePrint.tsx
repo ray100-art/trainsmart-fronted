@@ -1,4 +1,5 @@
 import { formatDate } from '@/lib/utils'
+import { BRAND_LOGOS } from '@/lib/brand'
 import type { Participant, TrainingSession } from '@/types'
 
 interface CertificatePrintProps {
@@ -17,15 +18,25 @@ export function CertificatePrint({ session, participant }: CertificatePrintProps
         </div>
         <div className="px-10 py-8">
           <div className="mb-6 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-brand-700 bg-brand-50">
-              <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
-                <rect x="9.5" y="3" width="5" height="18" rx="1.5" fill="#006622" />
-                <rect x="3" y="9.5" width="18" height="5" rx="1.5" fill="#006622" />
-                <circle cx="12" cy="12" r="10.5" stroke="#006622" strokeWidth="1.5" fill="none" />
-              </svg>
+            <div className="mb-4 flex items-center justify-center gap-6">
+              <img
+                src={BRAND_LOGOS.coatOfArms}
+                alt="Ministry of Health Kenya"
+                className="h-16 w-auto object-contain"
+                referrerPolicy="no-referrer"
+              />
+              <img
+                src={BRAND_LOGOS.nascop}
+                alt="NASCOP"
+                className="h-10 w-auto object-contain"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.src = '/brand/nascop-logo-hq.png'
+                }}
+              />
             </div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">
-              Ministry of Health Kenya · NASCOP
+              Republic of Kenya · Ministry of Health · NASCOP
             </p>
             <h1 className="mt-2 text-2xl font-black uppercase tracking-wide text-brand-800">
               Certificate of Training Completion
