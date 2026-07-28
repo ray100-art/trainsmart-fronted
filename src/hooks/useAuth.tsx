@@ -83,18 +83,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (username: string, password: string) => {
-    const data = await apiLogin(username, password)
-    const auth: AuthState = {
-      role: data.role,
-      county: data.county,
-      username: data.username,
-      full_name: data.full_name,
-      staff_number: data.staff_number,
+    await apiLogin(username, password)
+    try {
+      const p = await getMe()
+      const auth = profileToAuth(p)
+      persistAuth(auth)
+      setUser(auth)
+      setProfile(p)
+    } catch (err) {
+      // Login API succeeded but session cookie was not accepted/sent (common when
+      // FE and API are on different domains without SameSite=None).
+      clearPersistedAuth()
+      setUser(null)
+      setProfile(null)
+      throw err
     }
-    persistAuth(auth)
-    setUser(auth)
-    const p = await getMe()
-    setProfile(p)
   }, [])
 
   const logout = useCallback(async () => {
