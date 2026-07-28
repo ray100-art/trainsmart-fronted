@@ -1,6 +1,7 @@
 /**
  * Brand logos served from this app (same origin on Vercel).
- * Absolute site URLs also work: https://trainsmart-fronted.vercel.app/brand/...
+ * Visible on: Login, Verify, App header, Certificates print.
+ * Absolute URLs: https://trainsmart-fronted.vercel.app/brand/...
  */
 export const BRAND_LOGOS = {
   /** Full MoH crest + wordmark */
