@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { formatDate, getApiErrorMessage } from '@/lib/utils'
 import type { CertificateVerification } from '@/types'
 import {
-  CheckCircle2, ShieldCheck, XCircle, Search, Award,
+  CheckCircle2, XCircle, Search, Award,
   CalendarDays, MapPin, User, GraduationCap, History,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
