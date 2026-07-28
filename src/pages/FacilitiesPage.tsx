@@ -12,7 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getApiErrorMessage } from '@/lib/utils'
-import { Building2 } from 'lucide-react'
+import { Building2, ChevronLeft, ChevronRight } from 'lucide-react'
+
+const PAGE_SIZE = 50
 
 const schema = z.object({
   name: z.string().min(2),
@@ -29,18 +31,22 @@ export function FacilitiesPage() {
   const [countyFilter, setCountyFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
+  const [page, setPage] = useState(0)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['facilities', search, countyFilter],
+    queryKey: ['facilities', search, countyFilter, page],
     queryFn: () => listFacilities({
       q: search || undefined,
       county: countyFilter || undefined,
       active_only: false,
-      limit: 200,
+      skip: page * PAGE_SIZE,
+      limit: PAGE_SIZE,
     }),
   })
 
   const facilities = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const { register, handleSubmit, setValue, watch, reset, formState: { isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -70,7 +76,7 @@ export function FacilitiesPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-brand-600">Settings Catalog</p>
           <h1 className="mt-1 text-2xl font-black text-gray-900">Health Facilities</h1>
-          <p className="text-sm text-gray-500">{facilities.length} facilit{facilities.length !== 1 ? 'ies' : 'y'}</p>
+          <p className="text-sm text-gray-500">{total} facilit{total !== 1 ? 'ies' : 'y'}</p>
         </div>
         <Button onClick={() => setShowForm(!showForm)}>
           {showForm ? 'Cancel' : 'Add Facility'}
@@ -81,10 +87,10 @@ export function FacilitiesPage() {
         <Input
           placeholder="Search facilities…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           className="max-w-sm"
         />
-        <Select value={countyFilter || 'all'} onValueChange={(v) => setCountyFilter(v === 'all' ? '' : v)}>
+        <Select value={countyFilter || 'all'} onValueChange={(v) => { setCountyFilter(v === 'all' ? '' : v); setPage(0) }}>
           <SelectTrigger className="w-48"><SelectValue placeholder="All counties" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All counties</SelectItem>
@@ -145,6 +151,7 @@ export function FacilitiesPage() {
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead className="border-b bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-500">
@@ -184,6 +191,19 @@ export function FacilitiesPage() {
             </tbody>
           </table>
         </div>
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>{total} facilit{total === 1 ? 'y' : 'ies'}</span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span>Page {page + 1} / {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

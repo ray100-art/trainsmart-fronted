@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LegacyCertificateImport } from '@/components/admin/LegacyCertificateImport'
 import { getApiErrorMessage } from '@/lib/utils'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const schema = z.object({
   username: z.string().min(3),
@@ -27,17 +28,21 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 const ROLES = Object.keys(ROLE_LABELS)
+const PAGE_SIZE = 50
 
 export function UsersPage() {
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [page, setPage] = useState(0)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => listUsers(0, 100),
+    queryKey: ['users', page],
+    queryFn: () => listUsers(page * PAGE_SIZE, PAGE_SIZE),
   })
   const users = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const { register, handleSubmit, setValue, watch, reset, formState: { isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -132,45 +137,59 @@ export function UsersPage() {
       {isLoading ? (
         <p className="text-sm text-gray-500">Loading users…</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="border-b bg-gray-50 text-left text-xs uppercase text-gray-500">
-              <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Username</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">County</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-medium">{u.full_name}</td>
-                  <td className="px-4 py-3">{u.username}</td>
-                  <td className="px-4 py-3">{ROLE_LABELS[u.role] ?? u.role}</td>
-                  <td className="px-4 py-3">{u.county}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant={u.is_active ? 'approved' : 'rejected'}>
-                      {u.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={toggleMut.isPending}
-                      onClick={() => toggleMut.mutate({ id: u.id, active: !u.is_active })}
-                    >
-                      {u.is_active ? 'Deactivate' : 'Activate'}
-                    </Button>
-                  </td>
+        <>
+          <div className="overflow-x-auto rounded-xl border bg-white">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <tr>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Username</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">County</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} className="border-b last:border-0">
+                    <td className="px-4 py-3 font-medium">{u.full_name}</td>
+                    <td className="px-4 py-3">{u.username}</td>
+                    <td className="px-4 py-3">{ROLE_LABELS[u.role] ?? u.role}</td>
+                    <td className="px-4 py-3">{u.county}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={u.is_active ? 'approved' : 'rejected'}>
+                        {u.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={toggleMut.isPending}
+                        onClick={() => toggleMut.mutate({ id: u.id, active: !u.is_active })}
+                      >
+                        {u.is_active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <span>{total} user{total === 1 ? '' : 's'}</span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span>Page {page + 1} / {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </>
       )}
       <LegacyCertificateImport />
     </div>
