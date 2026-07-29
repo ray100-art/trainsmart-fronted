@@ -1,15 +1,32 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { login as apiLogin, logout as apiLogout, getMe } from '@/api/auth'
-import type { AuthState, User, UserRole } from '@/types'
+import {
+  login as apiLogin,
+  logout as apiLogout,
+  getMe,
+  verifyMfa as apiVerifyMfa,
+  confirmMfaSetup as apiConfirmMfaSetup,
+} from '@/api/auth'
+import type { AuthState, LoginResponse, User, UserRole } from '@/types'
 
 /** UI profile cache only — JWT lives in httpOnly cookie, never localStorage. */
 const STORAGE_KEY = 'trainsmart_auth'
+
+export type MfaChallenge = {
+  mode: 'verify' | 'setup'
+  mfa_token: string
+  username?: string | null
+  full_name?: string | null
+}
 
 interface AuthContextValue {
   user: AuthState | null
   profile: User | null
   isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
+  mfaChallenge: MfaChallenge | null
+  login: (username: string, password: string) => Promise<'ok' | 'mfa'>
+  completeMfa: (code: string) => Promise<void>
+  completeMfaSetup: (secret: string, code: string) => Promise<void>
+  clearMfaChallenge: () => void
   logout: () => Promise<void>
   refreshAuth: () => Promise<void>
   hasRole: (...roles: UserRole[]) => boolean
@@ -39,10 +56,43 @@ function clearPersistedAuth() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
+function challengeFromLogin(res: LoginResponse): MfaChallenge | null {
+  if (!res.mfa_token) return null
+  if (res.mfa_setup_required) {
+    return {
+      mode: 'setup',
+      mfa_token: res.mfa_token,
+      username: res.username,
+      full_name: res.full_name,
+    }
+  }
+  if (res.mfa_required) {
+    return {
+      mode: 'verify',
+      mfa_token: res.mfa_token,
+      username: res.username,
+      full_name: res.full_name,
+    }
+  }
+  return null
+}
+
+async function loadSessionAfterAuth(
+  setUser: (u: AuthState | null) => void,
+  setProfile: (p: User | null) => void,
+) {
+  const p = await getMe()
+  const auth = profileToAuth(p)
+  persistAuth(auth)
+  setUser(auth)
+  setProfile(p)
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthState | null>(null)
   const [profile, setProfile] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [mfaChallenge, setMfaChallenge] = useState<MfaChallenge | null>(null)
 
   useEffect(() => {
     // Clear any legacy JWT stored from older builds
@@ -83,22 +133,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (username: string, password: string) => {
-    await apiLogin(username, password)
+    const res = await apiLogin(username, password)
+    const challenge = challengeFromLogin(res)
+    if (challenge) {
+      setMfaChallenge(challenge)
+      return 'mfa' as const
+    }
+    setMfaChallenge(null)
     try {
-      const p = await getMe()
-      const auth = profileToAuth(p)
-      persistAuth(auth)
-      setUser(auth)
-      setProfile(p)
+      await loadSessionAfterAuth(setUser, setProfile)
     } catch (err) {
-      // Login API succeeded but session cookie was not accepted/sent (common when
-      // FE and API are on different domains without SameSite=None).
       clearPersistedAuth()
       setUser(null)
       setProfile(null)
       throw err
     }
+    return 'ok' as const
   }, [])
+
+  const completeMfa = useCallback(async (code: string) => {
+    if (!mfaChallenge || mfaChallenge.mode !== 'verify') {
+      throw new Error('No MFA challenge in progress')
+    }
+    await apiVerifyMfa(mfaChallenge.mfa_token, code)
+    setMfaChallenge(null)
+    await loadSessionAfterAuth(setUser, setProfile)
+  }, [mfaChallenge])
+
+  const completeMfaSetup = useCallback(async (secret: string, code: string) => {
+    if (!mfaChallenge || mfaChallenge.mode !== 'setup') {
+      throw new Error('No MFA setup in progress')
+    }
+    await apiConfirmMfaSetup({
+      secret,
+      code,
+      mfa_token: mfaChallenge.mfa_token,
+    })
+    setMfaChallenge(null)
+    await loadSessionAfterAuth(setUser, setProfile)
+  }, [mfaChallenge])
+
+  const clearMfaChallenge = useCallback(() => setMfaChallenge(null), [])
 
   const logout = useCallback(async () => {
     try {
@@ -109,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearPersistedAuth()
     setUser(null)
     setProfile(null)
+    setMfaChallenge(null)
   }, [])
 
   const hasRole = useCallback(
@@ -117,8 +193,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo(
-    () => ({ user, profile, isLoading, login, logout, refreshAuth, hasRole }),
-    [user, profile, isLoading, login, logout, refreshAuth, hasRole],
+    () => ({
+      user,
+      profile,
+      isLoading,
+      mfaChallenge,
+      login,
+      completeMfa,
+      completeMfaSetup,
+      clearMfaChallenge,
+      logout,
+      refreshAuth,
+      hasRole,
+    }),
+    [
+      user, profile, isLoading, mfaChallenge, login, completeMfa,
+      completeMfaSetup, clearMfaChallenge, logout, refreshAuth, hasRole,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

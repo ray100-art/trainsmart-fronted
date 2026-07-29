@@ -420,8 +420,9 @@ export function SessionDetailPage() {
             </Card>
           )}
 
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <table className="w-full min-w-160 text-sm">
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm md:block">
+            <table className="w-full min-w-[720px] text-sm">
               <thead className="border-b bg-gray-50">
                 <tr>
                   {['Name', 'Cadre', 'Attendance', 'Pre-test', 'Post-test', 'Certificate', canManageSession ? '' : null]
@@ -511,6 +512,94 @@ export function SessionDetailPage() {
                 <p className="text-sm text-gray-500">No participants registered yet.</p>
               </div>
             )}
+          </div>
+
+          {/* Mobile stacked cards */}
+          <div className="space-y-3 md:hidden">
+            {session.participants.length === 0 && (
+              <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white py-12 text-center">
+                <Users className="h-8 w-8 text-gray-300" />
+                <p className="text-sm text-gray-500">No participants registered yet.</p>
+              </div>
+            )}
+            {session.participants.map((p) => (
+              <div key={p.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-gray-900">{p.name}</p>
+                    <p className="text-xs text-gray-500">{p.cadre}</p>
+                  </div>
+                  {canManageSession ? (
+                    <button
+                      type="button"
+                      onClick={() => runMutation(() => toggleAttendance(sessionId, p.id))}
+                      className="shrink-0"
+                    >
+                      <Badge variant={statusBadgeVariant(p.status)} dot>{p.status}</Badge>
+                    </button>
+                  ) : (
+                    <Badge variant={statusBadgeVariant(p.status)} dot>{p.status}</Badge>
+                  )}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] uppercase tracking-wide text-gray-400">Pre-test</Label>
+                    {canManageSession ? (
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        className="h-11 text-center"
+                        defaultValue={p.pre_test_score ?? ''}
+                        onBlur={(e) => {
+                          const pre = parseFloat(e.target.value) || 0
+                          runMutation(() => updateScores(sessionId, p.id, { pre_test_score: pre, post_test_score: p.post_test_score ?? 0 }))
+                        }}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-700">{p.pre_test_score ?? '—'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] uppercase tracking-wide text-gray-400">Post-test</Label>
+                    {canManageSession ? (
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        className={cn(
+                          'h-11 text-center',
+                          p.post_test_score != null && p.post_test_score >= 80 ? 'border-brand-300 bg-brand-50 text-brand-800' : '',
+                        )}
+                        defaultValue={p.post_test_score ?? ''}
+                        onBlur={(e) => {
+                          const post = parseFloat(e.target.value) || 0
+                          runMutation(() => updateScores(sessionId, p.id, { pre_test_score: p.pre_test_score ?? 0, post_test_score: post }))
+                        }}
+                      />
+                    ) : (
+                      <p className={cn('text-sm font-medium', p.post_test_score != null && p.post_test_score >= 80 ? 'text-brand-700' : 'text-gray-700')}>
+                        {p.post_test_score ?? '—'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3">
+                  <p className="font-mono text-xs font-semibold text-brand-700">
+                    {p.certificate_serial ?? 'No certificate'}
+                  </p>
+                  {canManageSession && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => runMutation(() => removeParticipant(sessionId, p.id))}
+                      className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </TabsContent>
 

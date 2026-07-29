@@ -8,10 +8,13 @@ export type UserRole =
   | 'ROLE_TRAINEE'
 
 export interface LoginResponse {
-  role: UserRole
-  county: string
-  username: string
-  full_name: string
+  mfa_required?: boolean
+  mfa_setup_required?: boolean
+  mfa_token?: string | null
+  role?: UserRole | null
+  county?: string | null
+  username?: string | null
+  full_name?: string | null
   staff_number?: string | null
 }
 
@@ -24,6 +27,7 @@ export interface User {
   county: string
   staff_number?: string | null
   is_active: boolean
+  mfa_enabled?: boolean
 }
 
 export interface Participant {
