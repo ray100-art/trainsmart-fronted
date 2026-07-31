@@ -6,36 +6,6 @@ export async function login(username: string, password: string) {
   return data
 }
 
-export async function verifyMfa(mfa_token: string, code: string) {
-  const { data } = await api.post<LoginResponse>('/auth/mfa/verify', { mfa_token, code })
-  return data
-}
-
-export async function startMfaSetup(mfa_token?: string) {
-  const { data } = await api.post<{ secret: string; otpauth_uri: string }>(
-    '/auth/mfa/setup/start',
-    { mfa_token: mfa_token || null },
-  )
-  return data
-}
-
-export async function confirmMfaSetup(payload: {
-  secret: string
-  code: string
-  mfa_token?: string
-}) {
-  const { data } = await api.post<LoginResponse>('/auth/mfa/setup/confirm', payload)
-  return data
-}
-
-export async function disableMfa(current_password: string, code: string) {
-  const { data } = await api.post<{ message: string }>('/auth/mfa/disable', {
-    current_password,
-    code,
-  })
-  return data
-}
-
 export async function logout() {
   const { data } = await api.post<{ message: string }>('/auth/logout')
   return data
